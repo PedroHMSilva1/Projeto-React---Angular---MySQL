@@ -10,6 +10,19 @@ export default function Turma() {
     const [ativo, setAtivo] = useState(false);
     const [data, setData] = useState('');
     const [lista, setLista] = useState([]);
+    const [idAtualizar, setIdAtualizar] = useState('');
+    const [anoBuscado, setAnoBuscado] = useState('');
+    const [cursoBuscado, setCursoBuscado] = useState('');
+
+    function prepararAtualizacao(item) {
+        setNome(item.Turma);
+        setDescricao(item.Curso);
+        setAnoLetivo(item.AnoLetivo);
+        setCapacidade(item.Capacidade);
+        setAtivo(item.Ativo);
+        setData(item.Inclusao);
+        setIdAtualizar(item.ID);
+    }
 
     async function salvar() {
         let body = {
@@ -21,20 +34,59 @@ export default function Turma() {
             "data": data
         };
 
-        let resp = await axios.post('http://localhost:3010/turma', body)
-        alert('Novo registro inserido: ' + resp.data.novoID);
+        let resp;
+
+        if (idAtualizar) {
+            resp = await axios.put(`http://localhost:3010/turma/${idAtualizar}`, body);
+            alert('Registro atualizado: ' + idAtualizar);
+            setIdAtualizar(null);
+        } else {
+            resp = await axios.post('http://localhost:3010/turma', body);
+            alert('Novo registro inserido: ' + resp.data.novoID);
+        }
+
+        setNome('');
+        setDescricao('');
+        setAnoLetivo('');
+        setCapacidade('');
+        setAtivo(false);
+        setData('');
     }
 
     async function buscar() {
-        let resp = await axios.get('http://localhost:3010/turma')
+        let resp = await axios.get('http://localhost:3010/turma');
         setLista(resp.data);
     }
 
-    async function deletar(id) {
-        await axios.delete('http://localhost:3010/turma/${id}')
-        buscar();
+    async function buscarPorAno() {
+        const anoBuscado = prompt("Digite o ano que deseja buscar:");
+        if (anoBuscado) {
+            let resp = await axios.get(`http://localhost:3010/turma/busca/ano?ano=${anoBuscado}`);
+            setLista(resp.data);
+        }
     }
-    
+
+    async function buscarPorAnoECurso() {
+        if (!anoBuscado || !cursoBuscado) {
+            alert("Por favor, preencha o ano e o curso.");
+            return;
+        }
+
+        try {
+            let resp = await axios.get(`http://localhost:3010/turma/${anoBuscado}/curso?curso=${cursoBuscado}`);
+            setLista(resp.data);
+        } catch (error) {
+            alert("Erro ao buscar turmas: " + error.message);
+        }
+    }
+
+    async function deletar(id) {
+        if (window.confirm("Você tem certeza que deseja deletar esta turma?")) {
+            let resp = await axios.delete(`http://localhost:3010/turma/${id}`);
+            alert(resp.data.mensagem);
+            buscar();
+        }
+    }
 
     return (
         <div className='pagina-turma'>
@@ -68,10 +120,31 @@ export default function Turma() {
                     <button onClick={salvar}> Salvar </button>
                 </div>
             </div>
+            <div className="busca">
+                <h1> Informação da Turma </h1>
+                <button onClick={buscar}> Buscar </button>
+                <button onClick={buscarPorAno}> Buscar por Ano </button>
+
+                <h2>Buscar por Ano e Curso</h2>
+                <div>
+                    <input
+                        type='number'
+                        placeholder='Ano'
+                        value={anoBuscado}
+                        onChange={e => setAnoBuscado(e.target.value)}
+                    />
+                    <input
+                        type='text'
+                        placeholder='Curso'
+                        value={cursoBuscado}
+                        onChange={e => setCursoBuscado(e.target.value)}
+                    />
+                    <button onClick={buscarPorAnoECurso}>Buscar</button>
+                </div>
+            </div>
 
             <hr />
-            <h1> Informação da Turma </h1>
-            <button onClick={buscar}> Buscar </button>
+
 
             <table>
                 <thead>
@@ -83,13 +156,14 @@ export default function Turma() {
                         <th>Capacidade</th>
                         <th>Ativo</th>
                         <th>Data</th>
+                        <th>Atualizar</th>
                         <th>Deletar</th>
                     </tr>
                 </thead>
 
                 <tbody>
-                    {lista.map(item => 
-                        <tr>
+                    {lista.map(item =>
+                        <tr key={item.ID}>
                             <td>{item.ID}</td>
                             <td>{item.Turma}</td>
                             <td>{item.Curso}</td>
@@ -97,6 +171,9 @@ export default function Turma() {
                             <td>{item.Capacidade}</td>
                             <td>{item.Ativo ? 'Sim' : 'Não'}</td>
                             <td>{new Date(item.Inclusao).toLocaleDateString()}</td>
+                            <td>
+                                <button onClick={() => prepararAtualizacao(item)}>Atualizar</button>
+                            </td>
                             <td>
                                 <button onClick={() => deletar(item.ID)}>Deletar</button>
                             </td>

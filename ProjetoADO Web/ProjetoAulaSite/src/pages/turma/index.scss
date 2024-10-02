@@ -5,6 +5,7 @@
     font-size: 20px;
     padding: 40px;
 
+
     h1 {
         margin: 10px 0px;
     }
@@ -19,12 +20,14 @@
 
     button {
         font-size: 25px;
+        margin: 5px;
     }
 
     .form {
         display: flex;
         flex-direction: column;
         gap: 20px;
+        width: 500px;
 
         > div {
             display: flex;
@@ -44,6 +47,9 @@
                 width: auto;
             }
         }
+    }
+    .busca{
+        width: 800px;
     }
 
 }
